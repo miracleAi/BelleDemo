@@ -1,0 +1,99 @@
+package com.example.zhulinping.studydemo.backuprestore.vcard;
+
+/**
+ * Created by zhulinping on 2017/9/22.
+ */
+
+import com.example.zhulinping.studydemo.backuprestore.vcard.vcardexception.VCardException;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * </p>
+ * vCard parser for vCard 2.1. See the specification for more detail about the spec itself.
+ * </p>
+ * <p>
+ * The spec is written in 1996, and currently various types of "vCard 2.1" exist.
+ * To handle real the world vCard formats appropriately and effectively, this class does not
+ * obey with strict vCard 2.1.
+ * In stead, not only vCard spec but also real world vCard is considered.
+ * </p>
+ * e.g. A lot of devices and softwares let vCard importer/exporter to use
+ * the PNG format to determine the type of image, while it is not allowed in
+ * the original specification. As of 2010, we can see even the FLV format
+ * (possible in Japanese mobile phones).
+ * </p>
+ */
+public final class VCardParser_V21 extends VCardParser {
+    /**
+     * A unmodifiable Set storing the property names available in the vCard 2.1 specification.
+     */
+    /* package */ static final Set<String> sKnownPropertyNameSet =
+            Collections.unmodifiableSet(new HashSet<String>(
+                    Arrays.asList("BEGIN", "END", "LOGO", "PHOTO", "LABEL", "FN", "TITLE", "SOUND",
+                            "VERSION", "TEL", "EMAIL", "TZ", "GEO", "NOTE", "URL",
+                            "BDAY", "ROLE", "REV", "UID", "KEY", "MAILER")));
+    /**
+     * A unmodifiable Set storing the types known in vCard 2.1.
+     */
+    /* package */ static final Set<String> sKnownTypeSet =
+            Collections.unmodifiableSet(new HashSet<String>(
+                    Arrays.asList("DOM", "INTL", "POSTAL", "PARCEL", "HOME", "WORK",
+                            "PREF", "VOICE", "FAX", "MSG", "CELL", "PAGER", "BBS",
+                            "MODEM", "CAR", "ISDN", "VIDEO", "AOL", "APPLELINK",
+                            "ATTMAIL", "CIS", "EWORLD", "INTERNET", "IBMMAIL",
+                            "MCIMAIL", "POWERSHARE", "PRODIGY", "TLX", "X400", "GIF",
+                            "CGM", "WMF", "BMP", "MET", "PMB", "DIB", "PICT", "TIFF",
+                            "PDF", "PS", "JPEG", "QTIME", "MPEG", "MPEG2", "AVI",
+                            "WAVE", "AIFF", "PCM", "X509", "PGP")));
+    /**
+     * A unmodifiable Set storing the values for the type "VALUE", available in the vCard 2.1.
+     */
+    /* package */ static final Set<String> sKnownValueSet =
+            Collections.unmodifiableSet(new HashSet<String>(
+                    Arrays.asList("INLINE", "URL", "CONTENT-ID", "CID")));
+    /**
+     * <p>
+     * A unmodifiable Set storing the values for the type "ENCODING", available in the vCard 2.1.
+     * </p>
+     * <p>
+     * Though vCard 2.1 specification does not allow "B" encoding, some data may have it.
+     * We allow it for safety.
+     * </p>
+     */
+    /* package */ static final Set<String> sAvailableEncoding =
+            Collections.unmodifiableSet(new HashSet<String>(
+                    Arrays.asList(VCardConstants.PARAM_ENCODING_7BIT,
+                            VCardConstants.PARAM_ENCODING_8BIT,
+                            VCardConstants.PARAM_ENCODING_QP,
+                            VCardConstants.PARAM_ENCODING_BASE64,
+                            VCardConstants.PARAM_ENCODING_B)));
+    private final VCardParserImpl_V21 mVCardParserImpl;
+    public VCardParser_V21() {
+        mVCardParserImpl = new VCardParserImpl_V21();
+    }
+    public VCardParser_V21(int vcardType) {
+        mVCardParserImpl = new VCardParserImpl_V21(vcardType);
+    }
+    @Override
+    public void addInterpreter(VCardInterpreter interpreter) {
+        mVCardParserImpl.addInterpreter(interpreter);
+    }
+    @Override
+    public void parse(InputStream is) throws IOException, VCardException {
+        mVCardParserImpl.parse(is);
+    }
+    @Override
+    public void parseOne(InputStream is) throws IOException, VCardException {
+        mVCardParserImpl.parseOne(is);
+    }
+    @Override
+    public void cancel() {
+        mVCardParserImpl.cancel();
+    }
+}

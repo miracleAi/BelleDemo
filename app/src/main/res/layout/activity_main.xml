@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/status_bar_top"
+    tools:context="com.example.zhulinping.studydemo.coord.CoordActivity">
+    <Button
+        android:id="@+id/coord_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="Coord"/>
+    <Button
+        android:id="@+id/status_bar_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="statusbar"/>
+    <Button
+        android:id="@+id/floating_view_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="floating view"/>
+    <Button
+        android:id="@+id/backup_restore_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="backup and restore"/>
+</LinearLayout>

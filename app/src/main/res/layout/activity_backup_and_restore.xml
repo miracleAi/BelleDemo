@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="10dp">
+    <Button
+        android:id="@+id/btn_backup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/contacts_backup"/>
+    <TextView
+        android:id="@+id/tv_backup_path"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="file path:"/>
+    <Button
+        android:id="@+id/btn_restore"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/contacts_restore"/>
+    <TextView
+        android:id="@+id/tv_rstore_path"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="restore from path:"/>
+    <Button
+        android:id="@+id/btn_sms_backup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/sms_backup"/>
+    <TextView
+        android:id="@+id/tv_sms_backup_path"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="restore from path:"/>
+    <Button
+        android:id="@+id/btn_sms_restore"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/sms_restore"/>
+    <TextView
+        android:id="@+id/tv_sms_rstore_path"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="restore from path:"/>
+    <TextView
+        android:id="@+id/tv_result"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:padding="10dp"
+        android:textSize="20sp"
+        android:layout_gravity="center_horizontal"
+        android:text="backup or restore success!"
+        android:textColor="@color/colorPrimary"/>
+</LinearLayout>

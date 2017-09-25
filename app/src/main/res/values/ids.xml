@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="contacts_backup_progress" type="id" />
+    <item name="contacts_backup_total" type="id" />
+    <item name="contacts_restore_progress" type="id" />
+    <item name="contacts_restore_total" type="id" />
+
+</resources>

@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">StudyDemo</string>
+    <string name="screen_size">屏幕尺寸：</string>
+    <string name="app_size">app区域尺寸：</string>
+    <string name="view_size">view布局区域尺寸：</string>
+    <string name="status_bar_size">状态栏尺寸：</string>
+    <string name="show_floatingview">show floating view</string>
+    <string name="hide_floatingview">hide floating view</string>
+    <string name="contacts_backup">ContactsBackup</string>
+    <string name="contacts_restore">ContactsRestore</string>
+    <string name="sms_backup">SmsBackup</string>
+    <string name="sms_restore">SmsRestore</string>
+
+</resources>
