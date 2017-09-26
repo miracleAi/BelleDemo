@@ -37,18 +37,10 @@ import java.util.List;
 public class SmsUtils {
     private static String TAG = "SmsUtils";
     public static final Uri SMS_URI = Uri.parse("content://sms/");
-    private static SmsUtils instance;
     public BackupReatoreListener mBackupListener;
     public BackupReatoreListener mRestoreLister;
     public int mBackupCount = 0;
     public int mRestoreCount = 0;
-
-    public static SmsUtils getInstance() {
-        if (instance == null) {
-            instance = new SmsUtils();
-        }
-        return instance;
-    }
 
     public SmsUtils() {
 
@@ -98,10 +90,6 @@ public class SmsUtils {
             return null;
         }
         Gson gson = new Gson();
-       /* String smsJsonStr = gson.toJson(list);
-        if (smsJsonStr == null || "".equals(smsJsonStr)) {
-            return "";
-        }*/
         String filePath = FileUtils.getSmsFilePath();
         File file = new File(filePath);
         Writer writer = null;
@@ -111,26 +99,18 @@ public class SmsUtils {
             }
             //打开文件进行写入
             writer = new OutputStreamWriter(new FileOutputStream(filePath), "UTF-8");
-           /* StringBuilder smsJsonStr = new StringBuilder();
-            for (int i = 0; i < list.size(); i++) {
-                SmsInfo info = list.get(i);
-                smsJsonStr.append(gson.toJson(info));
-                if (mBackupListener != null) {
-                    mBackupListener.onProgress(R.id.sms_backup_progress, i);
-                }
-            }
-            writer.write(smsJsonStr.toString());*/
             int total = list.size();
+            Log.d("zlp", "read total sms count " + total);
             for (int i = 0; i < total; i++) {
                 SmsInfo info = list.get(i);
                 String smsJsonStr = gson.toJson(info);
                 if (i == 0) {
                     writer.write("[");
                 }
-                writer.write(smsJsonStr + ",");
                 if (i == total - 1) {
-                    writer.write("]");
-
+                    writer.write(smsJsonStr + "]");
+                } else {
+                    writer.write(smsJsonStr + ",");
                 }
                 if (mBackupListener != null) {
                     mBackupListener.onProgress(R.id.sms_backup_progress, i);

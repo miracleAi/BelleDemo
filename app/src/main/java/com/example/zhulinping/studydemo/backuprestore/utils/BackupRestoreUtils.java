@@ -51,7 +51,6 @@ import java.util.ArrayList;
 
 public class BackupRestoreUtils {
     private static final String LOG_TAG = "BackupRestoreUtils";
-    private static BackupRestoreUtils mInstance;
     public final static int VCARD_VERSION_AUTO_DETECT = 0;
     public final static int VCARD_VERSION_V21 = 1;
     public final static int VCARD_VERSION_V30 = 2;
@@ -59,13 +58,6 @@ public class BackupRestoreUtils {
     private int mRestoreCurrentCount = 0;
     private int mRestoreCount = 0;
     private BackupReatoreListener mRestoreListener = null;
-
-    public static BackupRestoreUtils getInstance() {
-        if (mInstance == null) {
-            mInstance = new BackupRestoreUtils();
-        }
-        return mInstance;
-    }
 
     public BackupRestoreUtils() {
     }
@@ -128,7 +120,6 @@ public class BackupRestoreUtils {
                 listener.onProgress(R.id.contacts_backup_progress, current);
                 current++;
             }
-            //TODO:刷新 SD卡
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             return null;

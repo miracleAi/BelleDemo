@@ -54,6 +54,8 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
     @BindView(R.id.tv_sms_rstore_path)
     TextView tvSmsRstorePath;
     private int mTotal = 0;
+    private SmsUtils mSmsUtils;
+    private BackupRestoreUtils mContactsUtils;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +67,8 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
         btnSmsBackup.setOnClickListener(this);
         btnSmsRestore.setOnClickListener(this);
         mHandler = new Handler(this);
+        mSmsUtils = new SmsUtils();
+        mContactsUtils = new BackupRestoreUtils();
     }
 
     @Override
@@ -108,38 +112,22 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
     //短信备份
     public void smsBackup() {
         tvSmsBackupPath.setText("sms backup ing ...");
-        Task.callInBackground(new Callable<ArrayList<SmsInfo>>() {
+        Task.callInBackground(new Callable<String>() {
             @Override
-            public ArrayList<SmsInfo> call() throws Exception {
-                return SmsUtils.getInstance().getSmsList(BackRestoreActivity.this, mListener);
+            public String call() throws Exception {
+                return mSmsUtils.smsBackup(mSmsUtils.getSmsList(BackRestoreActivity.this, mListener));
             }
-        }).onSuccess(new Continuation<ArrayList<SmsInfo>, Object>() {
+        }).onSuccess(new Continuation<String, Object>() {
             @Override
-            public Object then(Task<ArrayList<SmsInfo>> task) throws Exception {
-                final ArrayList<SmsInfo> list = task.getResult();
-                if (null == list || list.size() == 0) {
-                    tvSmsBackupPath.setText("read sms fail ...");
+            public Object then(Task<String> task) throws Exception {
+                String path = task.getResult();
+                tvSmsBackupPath.setText("sms backup end");
+                if (null == path || "".equals(path)) {
+                    tvResult.setText(" sms backup fail");
                     return null;
                 }
-                Task.callInBackground(new Callable<String>() {
-                    @Override
-                    public String call() throws Exception {
-                        return SmsUtils.getInstance().smsBackup(list);
-                    }
-                }).onSuccess(new Continuation<String, Object>() {
-                    @Override
-                    public Object then(Task<String> task) throws Exception {
-                        String path = task.getResult();
-                        tvSmsBackupPath.setText("sms backup end");
-                        if (null == path || "".equals(path)) {
-                            tvResult.setText(" sms backup fail");
-                            return null;
-                        }
-                        tvSmsBackupPath.setText(path);
-                        //tvResult.setText("sms backup success!");
-                        return null;
-                    }
-                }, Task.UI_THREAD_EXECUTOR);
+                tvSmsBackupPath.setText(path);
+                tvResult.setText("sms backup success!");
                 return null;
             }
         }, Task.UI_THREAD_EXECUTOR);
@@ -149,42 +137,25 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
     public void smsRestore() {
         final long smsTime = System.currentTimeMillis();
         tvSmsRstorePath.setText("sms restore ing ...");
-        Task.callInBackground(new Callable<ArrayList<SmsInfo>>() {
+        Task.callInBackground(new Callable<Boolean>() {
             @Override
-            public ArrayList<SmsInfo> call() throws Exception {
-                return SmsUtils.getInstance().readSmsFromFile(FileUtils.getSmsFilePath(), mListener);
+            public Boolean call() throws Exception {
+                return mSmsUtils.smsRestore(BackRestoreActivity.this, mSmsUtils.readSmsFromFile(FileUtils.getSmsFilePath(), mListener));
             }
-        }).onSuccess(new Continuation<ArrayList<SmsInfo>, Object>() {
+        }).onSuccess(new Continuation<Boolean, Object>() {
             @Override
-            public Object then(Task<ArrayList<SmsInfo>> task) throws Exception {
-                final ArrayList<SmsInfo> list = task.getResult();
-                if (null == list || list.size() == 0) {
-                    tvSmsRstorePath.setText("read sms from file fail...");
-                    return null;
+            public Object then(Task<Boolean> task) throws Exception {
+                Log.d("zlp", "sms restore time = " + (System.currentTimeMillis() - smsTime));
+                boolean result = task.getResult();
+                tvSmsRstorePath.setText("sms restore done...");
+                if (result) {
+                    tvResult.setText("sms restore success !");
+                } else {
+                    tvResult.setText("sms restore fail!");
                 }
-                Task.callInBackground(new Callable<Boolean>() {
-                    @Override
-                    public Boolean call() throws Exception {
-                        return SmsUtils.getInstance().smsRestore(BackRestoreActivity.this, list);
-                    }
-                }).onSuccess(new Continuation<Boolean, Object>() {
-                    @Override
-                    public Object then(Task<Boolean> task) throws Exception {
-                        Log.d("zlp", "sms restore time = " + (System.currentTimeMillis() - smsTime));
-                        boolean result = task.getResult();
-                        tvSmsRstorePath.setText("sms restore done...");
-                        if (result) {
-                            tvResult.setText("sms restore success !");
-                        } else {
-                            tvResult.setText("sms restore fail!");
-                        }
-                        return null;
-                    }
-                }, Task.UI_THREAD_EXECUTOR);
                 return null;
             }
         }, Task.UI_THREAD_EXECUTOR);
-
     }
 
     //通讯录备份
@@ -193,7 +164,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
         Task.callInBackground(new Callable<String>() {
             @Override
             public String call() throws Exception {
-                return BackupRestoreUtils.getInstance().contactsBackup(BackRestoreActivity.this, mListener);
+                return mContactsUtils.contactsBackup(BackRestoreActivity.this, mListener);
             }
         }).onSuccess(new Continuation<String, Object>() {
             @Override
@@ -214,38 +185,22 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
     //通讯录还原
     public void contactsRestore() {
         tvRstorePath.setText("contacts restoring ……");
-        Task.callInBackground(new Callable<ArrayList<RestoreRequest>>() {
+        Task.callInBackground(new Callable<Boolean>() {
             @Override
-            public ArrayList<RestoreRequest> call() throws Exception {
-                Log.d("zlp", "uri " + FileUtils.getUri());
-                return BackupRestoreUtils.getInstance().getRestoreRequest(BackRestoreActivity.this, new Uri[]{FileUtils.getUri()});
+            public Boolean call() throws Exception {
+                return mContactsUtils.contactsRestore(BackRestoreActivity.this,
+                        mContactsUtils.getRestoreRequest(BackRestoreActivity.this, new Uri[]{FileUtils.getUri()}).get(0), mListener);
             }
-        }).onSuccess(new Continuation<ArrayList<RestoreRequest>, Object>() {
+        }).onSuccess(new Continuation<Boolean, Object>() {
             @Override
-            public Object then(Task<ArrayList<RestoreRequest>> task) throws Exception {
-                final ArrayList<RestoreRequest> list = task.getResult();
-                if (null == list || list.size() == 0) {
+            public Object then(Task<Boolean> task) throws Exception {
+                tvRstorePath.setText(" restore done");
+                boolean result = task.getResult();
+                if (result) {
+                    tvResult.setText("restore success");
+                } else {
                     tvResult.setText("restore fail");
-                    return null;
                 }
-                Task.callInBackground(new Callable<Boolean>() {
-                    @Override
-                    public Boolean call() throws Exception {
-                        return BackupRestoreUtils.getInstance().contactsRestore(BackRestoreActivity.this, list.get(0), mListener);
-                    }
-                }).onSuccess(new Continuation<Boolean, Object>() {
-                    @Override
-                    public Object then(Task<Boolean> task) throws Exception {
-                        tvRstorePath.setText(" restore done");
-                        boolean result = task.getResult();
-                        if (result) {
-                            tvResult.setText("restore success");
-                        } else {
-                            tvResult.setText("restore fail");
-                        }
-                        return null;
-                    }
-                }, Task.UI_THREAD_EXECUTOR);
                 return null;
             }
         }, Task.UI_THREAD_EXECUTOR);
