@@ -218,6 +218,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
                 int contactsBackupProgress = contactsBackupCurrent * 100 / mTotal;
                 if (contactsBackupCurrent % mTotal == 0) {
                     contactsBackupProgress = 100;
+                    tvBackupPath.setText("back progress == " + contactsBackupProgress);
                 }
                 if (contactsBackupCurrent % 5 == 0) {
                     tvBackupPath.setText("back progress == " + contactsBackupProgress);
@@ -235,6 +236,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
                 int contactsRestoreProgress = contactsRestoreCurrent * 100 / mTotal;
                 if (contactsRestoreCurrent % mTotal == 0) {
                     contactsRestoreProgress = 100;
+                    tvRstorePath.setText("restore progress == " + contactsRestoreProgress);
                 }
                 if (contactsRestoreCurrent % 5 == 0) {
                     tvRstorePath.setText("restore progress == " + contactsRestoreProgress);
@@ -252,6 +254,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
                 int smsBackupProgress = smsBackupCurrent * 100 / mTotal;
                 if (smsBackupCurrent % mTotal == 0) {
                     smsBackupProgress = 100;
+                    tvSmsBackupPath.setText("restore progress == " + smsBackupProgress);
                 }
                 if (smsBackupCurrent % 5 == 0) {
                     tvSmsBackupPath.setText("restore progress == " + smsBackupProgress);
@@ -269,6 +272,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
                 int smsRestoreProgress = smsRestoreCurrent * 100 / mTotal;
                 if (smsRestoreCurrent % mTotal == 0) {
                     smsRestoreProgress = 100;
+                    tvSmsRstorePath.setText("restore progress == " + smsRestoreProgress);
                 }
                 if (smsRestoreCurrent % 5 == 0) {
                     tvSmsRstorePath.setText("restore progress == " + smsRestoreProgress);
