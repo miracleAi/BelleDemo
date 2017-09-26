@@ -2,6 +2,7 @@ package com.example.zhulinping.studydemo.backuprestore.utils;
 
 import android.net.Uri;
 import android.os.Environment;
+import android.text.TextUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +22,7 @@ public class FileUtils {
         }
         return forderPath + "vcard.vcf";
     }
+
     public static Uri getUri() {
         Uri uri = null;
         String filePath = getContactsFilePath();
@@ -36,12 +38,24 @@ public class FileUtils {
             return null;
         }
     }
-    public static String getSmsFilePath(){
+
+    public static String getSmsFilePath() {
         String forderPath = Environment.getExternalStorageDirectory().getAbsolutePath() + FORDER_PATH;
         File file = new File(forderPath);
         if (!file.exists()) {
             file.mkdirs();
         }
         return forderPath + "sms.json";
+    }
+    //删除文件
+    public static boolean deleteFile(String path) {
+        if (TextUtils.isEmpty(path)) {
+            return true;
+        }
+        File file = new File(path);
+        if (!file.exists()) {
+            return true;
+        }
+        return file.delete();
     }
 }

@@ -130,6 +130,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
                 }
                 tvSmsBackupPath.setText(path);
                 tvResult.setText("sms backup success!");
+                //TODO:上传文件完成后删除本地备份文件
                 return null;
             }
         }, Task.UI_THREAD_EXECUTOR);
@@ -152,6 +153,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
                 boolean result = task.getResult();
                 tvSmsRstorePath.setText("sms restore done...");
                 if (result) {
+                    FileUtils.deleteFile(FileUtils.getSmsFilePath());
                     tvResult.setText("sms restore success !");
                 } else {
                     tvResult.setText("sms restore fail!");
@@ -178,6 +180,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
                 if (null != path && !path.equals("")) {
                     tvBackupPath.setText(path);
                     tvResult.setText("contacts backup success !");
+                    //TODO:上传文件完成后删除本地文件
                 } else {
                     tvResult.setText("contacts backup fail !");
                 }
@@ -203,6 +206,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
                 tvRstorePath.setText("contacts restore done...");
                 boolean result = task.getResult();
                 if (result) {
+                    FileUtils.deleteFile(FileUtils.getContactsFilePath());
                     tvResult.setText("contacts restore success !");
                 } else {
                     tvResult.setText("contacts restore fail !");
