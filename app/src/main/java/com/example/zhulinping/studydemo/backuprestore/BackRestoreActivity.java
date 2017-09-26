@@ -174,7 +174,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
                         boolean result = task.getResult();
                         tvSmsRstorePath.setText("sms restore done...");
                         if (result) {
-                            //tvResult.setText("sms restore success !");
+                            tvResult.setText("sms restore success !");
                         } else {
                             tvResult.setText("sms restore fail!");
                         }

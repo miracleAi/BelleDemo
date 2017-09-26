@@ -98,7 +98,7 @@ public class SmsUtils {
             return null;
         }
         Gson gson = new Gson();
-        /*String smsJsonStr = gson.toJson(list);
+       /* String smsJsonStr = gson.toJson(list);
         if (smsJsonStr == null || "".equals(smsJsonStr)) {
             return "";
         }*/
@@ -111,10 +111,27 @@ public class SmsUtils {
             }
             //打开文件进行写入
             writer = new OutputStreamWriter(new FileOutputStream(filePath), "UTF-8");
+           /* StringBuilder smsJsonStr = new StringBuilder();
             for (int i = 0; i < list.size(); i++) {
                 SmsInfo info = list.get(i);
+                smsJsonStr.append(gson.toJson(info));
+                if (mBackupListener != null) {
+                    mBackupListener.onProgress(R.id.sms_backup_progress, i);
+                }
+            }
+            writer.write(smsJsonStr.toString());*/
+            int total = list.size();
+            for (int i = 0; i < total; i++) {
+                SmsInfo info = list.get(i);
                 String smsJsonStr = gson.toJson(info);
-                writer.write(smsJsonStr);
+                if (i == 0) {
+                    writer.write("[");
+                }
+                writer.write(smsJsonStr + ",");
+                if (i == total - 1) {
+                    writer.write("]");
+
+                }
                 if (mBackupListener != null) {
                     mBackupListener.onProgress(R.id.sms_backup_progress, i);
                 }
