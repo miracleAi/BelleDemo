@@ -4,6 +4,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.provider.BaseColumns;
+import android.provider.Telephony;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -32,6 +34,7 @@ import java.util.List;
 
 public class SmsUtils {
     private static String TAG = "SmsUtils";
+    public static final Uri SMS_URI = Uri.parse("content://sms/");
     private static SmsUtils instance;
 
     public static SmsUtils getInstance() {
@@ -48,16 +51,26 @@ public class SmsUtils {
     //获取短信
     public ArrayList<SmsInfo> getSmsList(Context context) {
         ArrayList<SmsInfo> smsList = new ArrayList<>();
-        Uri uri = Uri.parse("content://sms");
-        Cursor cursor = context.getContentResolver().query(uri, new String[]{"address", "date", "type", "body"}, null, null, null);
+        Cursor cursor = context.getContentResolver().query(SMS_URI, null, null, null, null);
         try {
             while (cursor.moveToNext()) {
-                String address = cursor.getString(cursor.getColumnIndex("address"));
-                String date = cursor.getString(cursor.getColumnIndex("date"));
-                String type = cursor.getString(cursor.getColumnIndex("type"));
-                String body = cursor.getString(cursor.getColumnIndex("body"));
-
-                SmsInfo smsInfo = new SmsInfo(address, date, type, body);
+                SmsInfo smsInfo = new SmsInfo();
+                smsInfo.setId(cursor.getString(cursor.getColumnIndex(BaseColumns._ID)));
+                smsInfo.setThreadId(cursor.getString(cursor.getColumnIndex(Telephony.Sms.THREAD_ID)));
+                smsInfo.setErrorCode(cursor.getString(cursor.getColumnIndex(Telephony.Sms.ERROR_CODE)));
+                smsInfo.setLocked(cursor.getString(cursor.getColumnIndex(Telephony.Sms.LOCKED)));
+                smsInfo.setPerson(cursor.getString(cursor.getColumnIndex(Telephony.Sms.PERSON)));
+                smsInfo.setProtocol(cursor.getString(cursor.getColumnIndex(Telephony.Sms.PROTOCOL)));
+                smsInfo.setRead(cursor.getString(cursor.getColumnIndex(Telephony.Sms.READ)));
+                smsInfo.setReplyPathPresent(cursor.getString(cursor.getColumnIndex(Telephony.Sms.REPLY_PATH_PRESENT)));
+                smsInfo.setSubject(cursor.getString(cursor.getColumnIndex(Telephony.Sms.SUBJECT)));
+                smsInfo.setSeen(cursor.getString(cursor.getColumnIndex(Telephony.Sms.SEEN)));
+                smsInfo.setServiceCenter(cursor.getString(cursor.getColumnIndex(Telephony.Sms.SERVICE_CENTER)));
+                smsInfo.setStatus(cursor.getString(cursor.getColumnIndex(Telephony.Sms.STATUS)));
+                smsInfo.setAddress(cursor.getString(cursor.getColumnIndex(Telephony.Sms.ADDRESS)));
+                smsInfo.setType(cursor.getString(cursor.getColumnIndex(Telephony.Sms.TYPE)));
+                smsInfo.setDate(cursor.getString(cursor.getColumnIndex(Telephony.Sms.DATE)));
+                smsInfo.setBody(cursor.getString(cursor.getColumnIndex(Telephony.Sms.BODY)));
                 smsList.add(smsInfo);
             }
         } finally {
@@ -113,7 +126,7 @@ public class SmsUtils {
         try {
             //打开文件进行读取
             InputStream in = new FileInputStream(filePath);
-            reader = new BufferedReader(new InputStreamReader(in,"UTF-8"));
+            reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
             StringBuilder jsonString = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -129,6 +142,7 @@ public class SmsUtils {
             if (null == list || list.size() == 0) {
                 return null;
             }
+            smsList.clear();
             smsList.addAll(list);
             return smsList;
         } catch (FileNotFoundException e) {
@@ -157,18 +171,31 @@ public class SmsUtils {
         }
         try {
             Uri uri = Uri.parse("content://sms");
-            context.getContentResolver().delete(uri, null, null);
+            //context.getContentResolver().delete(uri, null, null);
             for (SmsInfo smsInfo : list) {
                 ContentValues values = new ContentValues();
-                values.put("address", smsInfo.getAddress());
-                values.put("date", smsInfo.getDate());
-                values.put("type", smsInfo.getType());
-                values.put("body", smsInfo.getBody());
+                //values.put(BaseColumns._ID, smsInfo.getId());
+                // values.put(Telephony.Sms.THREAD_ID, smsInfo.getThreadId());
+                values.put(Telephony.Sms.ADDRESS, smsInfo.getAddress());
+                values.put(Telephony.Sms.PERSON, smsInfo.getPerson());
+                values.put(Telephony.Sms.PROTOCOL, smsInfo.getProtocol());
+                values.put(Telephony.Sms.READ, smsInfo.getRead());
+                values.put(Telephony.Sms.DATE, smsInfo.getDate());
+                values.put(Telephony.Sms.STATUS, smsInfo.getStatus());
+                values.put(Telephony.Sms.TYPE, smsInfo.getType());
+                values.put(Telephony.Sms.REPLY_PATH_PRESENT, smsInfo.getReplyPathPresent());
+                values.put(Telephony.Sms.SUBJECT, smsInfo.getSubject());
+                values.put(Telephony.Sms.SERVICE_CENTER, smsInfo.getServiceCenter());
+                values.put(Telephony.Sms.LOCKED, smsInfo.getLocked());
+                values.put(Telephony.Sms.ERROR_CODE, smsInfo.getErrorCode());
+                values.put(Telephony.Sms.SEEN, smsInfo.getSeen());
+                values.put(Telephony.Sms.BODY, smsInfo.getBody());
                 context.getContentResolver().insert(uri, values);
             }
+            Log.d("zlp", "sms restore");
             return true;
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            Log.d("zlp", "sms error " + e.getMessage());
             e.printStackTrace();
             return false;
         }
