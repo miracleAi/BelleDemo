@@ -80,7 +80,6 @@ public class BackupRestoreUtils {
                     mRestoreListener.onProgress(R.id.contacts_restore_progress, progress);
                 }
             }
-            Log.d("zlp", "import pregress " + mRestoreCurrentCount);
         }
 
         @Override
@@ -143,12 +142,16 @@ public class BackupRestoreUtils {
     }
 
     //联系人还原
-    public boolean contactsRestore(Context context, RestoreRequest request, BackupReatoreListener listener) {
+    public boolean contactsRestore(Context context, ArrayList<RestoreRequest> requestList, BackupReatoreListener listener) {
+        if (requestList == null || requestList.size() == 0) {
+            return false;
+        }
         mRestoreCount = 0;
         mRestoreCurrentCount = 0;
         mRestoreListener = listener;
         ContentResolver mResolver = context.getContentResolver();
         final int[] possibleVCardVersions;
+        RestoreRequest request = requestList.get(0);
         if (request.vcardVersion == VCARD_VERSION_AUTO_DETECT) {
             /**
              * Note: this code assumes that a given Uri is able to be opened more than once,
