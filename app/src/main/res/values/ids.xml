@@ -4,5 +4,9 @@
     <item name="contacts_backup_total" type="id" />
     <item name="contacts_restore_progress" type="id" />
     <item name="contacts_restore_total" type="id" />
+    <item name="sms_backup_progress" type="id" />
+    <item name="sms_backup_total" type="id" />
+    <item name="sms_restore_progress" type="id" />
+    <item name="sms_restore_total" type="id" />
 
 </resources>

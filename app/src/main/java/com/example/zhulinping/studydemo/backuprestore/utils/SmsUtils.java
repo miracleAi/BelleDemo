@@ -9,6 +9,8 @@ import android.provider.Telephony;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.example.zhulinping.studydemo.R;
+import com.example.zhulinping.studydemo.backuprestore.BackupReatoreListener;
 import com.example.zhulinping.studydemo.backuprestore.bean.SmsInfo;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -36,6 +38,10 @@ public class SmsUtils {
     private static String TAG = "SmsUtils";
     public static final Uri SMS_URI = Uri.parse("content://sms/");
     private static SmsUtils instance;
+    public BackupReatoreListener mBackupListener;
+    public BackupReatoreListener mRestoreLister;
+    public int mBackupCount = 0;
+    public int mRestoreCount = 0;
 
     public static SmsUtils getInstance() {
         if (instance == null) {
@@ -49,9 +55,12 @@ public class SmsUtils {
     }
 
     //获取短信
-    public ArrayList<SmsInfo> getSmsList(Context context) {
+    public ArrayList<SmsInfo> getSmsList(Context context, BackupReatoreListener listener) {
+        mBackupListener = listener;
+        //单位是 ns
+        long time = System.currentTimeMillis() - 30 * 24 * 60 * 60 * 1000 * 1000;
         ArrayList<SmsInfo> smsList = new ArrayList<>();
-        Cursor cursor = context.getContentResolver().query(SMS_URI, null, null, null, null);
+        Cursor cursor = context.getContentResolver().query(SMS_URI, null, Telephony.Sms.DATE + ">" + time, null, null);
         try {
             while (cursor.moveToNext()) {
                 SmsInfo smsInfo = new SmsInfo();
@@ -76,19 +85,23 @@ public class SmsUtils {
         } finally {
             cursor.close();
         }
+        mBackupCount = smsList.size();
+        if (mBackupListener != null) {
+            mBackupListener.onTotal(R.id.sms_backup_total, mBackupCount);
+        }
         return smsList;
     }
 
     //将短信存入文件
-    public String smsBackup(Context context, ArrayList<SmsInfo> list) {
+    public String smsBackup(ArrayList<SmsInfo> list) {
         if (null == list || list.size() == 0) {
             return null;
         }
         Gson gson = new Gson();
-        String smsJsonStr = gson.toJson(list);
+        /*String smsJsonStr = gson.toJson(list);
         if (smsJsonStr == null || "".equals(smsJsonStr)) {
             return "";
-        }
+        }*/
         String filePath = FileUtils.getSmsFilePath();
         File file = new File(filePath);
         Writer writer = null;
@@ -98,7 +111,14 @@ public class SmsUtils {
             }
             //打开文件进行写入
             writer = new OutputStreamWriter(new FileOutputStream(filePath), "UTF-8");
-            writer.write(smsJsonStr);
+            for (int i = 0; i < list.size(); i++) {
+                SmsInfo info = list.get(i);
+                String smsJsonStr = gson.toJson(info);
+                writer.write(smsJsonStr);
+                if (mBackupListener != null) {
+                    mBackupListener.onProgress(R.id.sms_backup_progress, i);
+                }
+            }
             return filePath;
         } catch (IOException e) {
             e.printStackTrace();
@@ -115,7 +135,8 @@ public class SmsUtils {
     }
 
     //读取文件中待还原短信
-    public ArrayList<SmsInfo> readSmsFromFile(Context context, String filePath) {
+    public ArrayList<SmsInfo> readSmsFromFile(String filePath, BackupReatoreListener listener) {
+        mRestoreLister = listener;
         File file = new File(filePath);
         if (!file.exists()) {
             return null;
@@ -144,6 +165,10 @@ public class SmsUtils {
             }
             smsList.clear();
             smsList.addAll(list);
+            mRestoreCount = smsList.size();
+            if (mRestoreLister != null) {
+                mRestoreLister.onTotal(R.id.sms_restore_total, mRestoreCount);
+            }
             return smsList;
         } catch (FileNotFoundException e) {
             //当应用首次启动时，没有数据会抛出异常，异常不用捕获
@@ -172,7 +197,8 @@ public class SmsUtils {
         try {
             Uri uri = Uri.parse("content://sms");
             //context.getContentResolver().delete(uri, null, null);
-            for (SmsInfo smsInfo : list) {
+            for (int i = 0; i < list.size(); i++) {
+                SmsInfo smsInfo = list.get(i);
                 ContentValues values = new ContentValues();
                 //values.put(BaseColumns._ID, smsInfo.getId());
                 // values.put(Telephony.Sms.THREAD_ID, smsInfo.getThreadId());
@@ -191,8 +217,10 @@ public class SmsUtils {
                 values.put(Telephony.Sms.SEEN, smsInfo.getSeen());
                 values.put(Telephony.Sms.BODY, smsInfo.getBody());
                 context.getContentResolver().insert(uri, values);
+                if (mRestoreLister != null) {
+                    mRestoreLister.onProgress(R.id.sms_restore_progress, i);
+                }
             }
-            Log.d("zlp", "sms restore");
             return true;
         } catch (Exception e) {
             Log.d("zlp", "sms error " + e.getMessage());

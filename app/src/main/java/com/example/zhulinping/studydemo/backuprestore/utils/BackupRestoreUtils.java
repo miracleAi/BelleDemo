@@ -10,6 +10,8 @@ import android.provider.OpenableColumns;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.example.zhulinping.studydemo.R;
+import com.example.zhulinping.studydemo.backuprestore.BackupReatoreListener;
 import com.example.zhulinping.studydemo.backuprestore.vcard.RestoreRequest;
 import com.example.zhulinping.studydemo.backuprestore.vcard.VCardComposer;
 import com.example.zhulinping.studydemo.backuprestore.vcard.VCardConfig;
@@ -56,7 +58,7 @@ public class BackupRestoreUtils {
     private static final String CACHE_FILE_PREFIX = "vcard_import_";
     private int mRestoreCurrentCount = 0;
     private int mRestoreCount = 0;
-    private RestoreListener mRestoreListener = null;
+    private BackupReatoreListener mRestoreListener = null;
 
     public static BackupRestoreUtils getInstance() {
         if (mInstance == null) {
@@ -83,7 +85,7 @@ public class BackupRestoreUtils {
                     progress = 100;
                 }
                 if (mRestoreCurrentCount % 5 == 0) {
-                    mRestoreListener.onRestoreProgress(progress);
+                    mRestoreListener.onProgress(R.id.contacts_restore_progress, progress);
                 }
             }
             Log.d("zlp", "import pregress " + mRestoreCurrentCount);
@@ -96,7 +98,7 @@ public class BackupRestoreUtils {
     };
 
     //联系人备份
-    public String contactsBackup(Context context, BackupListener listener) {
+    public String contactsBackup(Context context, BackupReatoreListener listener) {
         String filePath = FileUtils.getContactsFilePath();
         int exportType = VCardConfig.getVCardTypeFromString("default");
         ContentResolver resolver = context.getContentResolver();
@@ -117,20 +119,13 @@ public class BackupRestoreUtils {
             if (total == 0) {
                 return null;
             }
-            listener.onTotalCount(total);
+            listener.onTotal(R.id.contacts_backup_total, total);
             int current = 1;  // 1-origin
             while (!composer.isAfterLast()) {
                 writer.write(composer.createOneEntry());
                 // vCard export is quite fast (compared to import), and frequent notifications
                 // bother notification bar too much.
-                int progress = current * 100 / total;
-                if(current % total == 0){
-                    progress = 100;
-                }
-                if (current % 5 == 0) {
-                    listener.onBackupProgress(progress);
-                    Log.d("zlp", "vcard export progress :" + progress);
-                }
+                listener.onProgress(R.id.contacts_backup_progress, current);
                 current++;
             }
             //TODO:刷新 SD卡
@@ -157,7 +152,7 @@ public class BackupRestoreUtils {
     }
 
     //联系人还原
-    public boolean contactsRestore(Context context, RestoreRequest request, RestoreListener listener) {
+    public boolean contactsRestore(Context context, RestoreRequest request, BackupReatoreListener listener) {
         mRestoreCount = 0;
         mRestoreCurrentCount = 0;
         mRestoreListener = listener;
@@ -186,7 +181,7 @@ public class BackupRestoreUtils {
             return false;
         }
         mRestoreCount = totalCount;
-        listener.onTotalCount(totalCount);
+        listener.onTotal(R.id.contacts_restore_total, totalCount);
         final VCardEntryConstructor constructor =
                 new VCardEntryConstructor(estimatedVCardType, null, estimatedCharset);
         final VCardEntryCommitter committer = new VCardEntryCommitter(mResolver);
@@ -522,19 +517,5 @@ public class BackupRestoreUtils {
                 detector.getEstimatedType(),
                 detector.getEstimatedCharset(),
                 vcardVersion, counter.getCount());
-    }
-
-    public interface BackupListener {
-        //备份进度
-        void onBackupProgress(int progress);
-
-        //联系人总数
-        void onTotalCount(int count);
-    }
-
-    public interface RestoreListener {
-        void onRestoreProgress(int progress);
-
-        void onTotalCount(int count);
     }
 }

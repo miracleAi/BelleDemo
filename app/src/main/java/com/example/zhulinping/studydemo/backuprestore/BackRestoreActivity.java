@@ -20,6 +20,7 @@ import com.example.zhulinping.studydemo.backuprestore.utils.SmsUtils;
 import com.example.zhulinping.studydemo.backuprestore.vcard.RestoreRequest;
 
 import java.util.ArrayList;
+import java.util.TimerTask;
 import java.util.concurrent.Callable;
 
 import bolts.Continuation;
@@ -52,6 +53,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
     Button btnSmsRestore;
     @BindView(R.id.tv_sms_rstore_path)
     TextView tvSmsRstorePath;
+    private int mTotal = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,11 +91,12 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
             Intent intent = new Intent(Telephony.Sms.Intents.ACTION_CHANGE_DEFAULT);
             intent.putExtra(Telephony.Sms.Intents.EXTRA_PACKAGE_NAME, currentPn);
             startActivity(intent);
-        }else {
+        } else {
             smsRestore();
         }
     }
-    public boolean isSmsDefault(){
+
+    public boolean isSmsDefault() {
         String defaultSmsApp = null;
         String currentPn = getPackageName();//获取当前程序包名
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.KITKAT) {
@@ -108,7 +111,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
         Task.callInBackground(new Callable<ArrayList<SmsInfo>>() {
             @Override
             public ArrayList<SmsInfo> call() throws Exception {
-                return SmsUtils.getInstance().getSmsList(BackRestoreActivity.this);
+                return SmsUtils.getInstance().getSmsList(BackRestoreActivity.this, mListener);
             }
         }).onSuccess(new Continuation<ArrayList<SmsInfo>, Object>() {
             @Override
@@ -121,7 +124,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
                 Task.callInBackground(new Callable<String>() {
                     @Override
                     public String call() throws Exception {
-                        return SmsUtils.getInstance().smsBackup(BackRestoreActivity.this, list);
+                        return SmsUtils.getInstance().smsBackup(list);
                     }
                 }).onSuccess(new Continuation<String, Object>() {
                     @Override
@@ -133,7 +136,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
                             return null;
                         }
                         tvSmsBackupPath.setText(path);
-                        tvResult.setText("sms backup success!");
+                        //tvResult.setText("sms backup success!");
                         return null;
                     }
                 }, Task.UI_THREAD_EXECUTOR);
@@ -144,11 +147,12 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
 
     //短信还原
     public void smsRestore() {
+        final long smsTime = System.currentTimeMillis();
         tvSmsRstorePath.setText("sms restore ing ...");
         Task.callInBackground(new Callable<ArrayList<SmsInfo>>() {
             @Override
             public ArrayList<SmsInfo> call() throws Exception {
-                return SmsUtils.getInstance().readSmsFromFile(BackRestoreActivity.this, FileUtils.getSmsFilePath());
+                return SmsUtils.getInstance().readSmsFromFile(FileUtils.getSmsFilePath(), mListener);
             }
         }).onSuccess(new Continuation<ArrayList<SmsInfo>, Object>() {
             @Override
@@ -166,10 +170,11 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
                 }).onSuccess(new Continuation<Boolean, Object>() {
                     @Override
                     public Object then(Task<Boolean> task) throws Exception {
+                        Log.d("zlp", "sms restore time = " + (System.currentTimeMillis() - smsTime));
                         boolean result = task.getResult();
                         tvSmsRstorePath.setText("sms restore done...");
                         if (result) {
-                            tvResult.setText("sms restore success !");
+                            //tvResult.setText("sms restore success !");
                         } else {
                             tvResult.setText("sms restore fail!");
                         }
@@ -188,7 +193,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
         Task.callInBackground(new Callable<String>() {
             @Override
             public String call() throws Exception {
-                return BackupRestoreUtils.getInstance().contactsBackup(BackRestoreActivity.this, mBackupListener);
+                return BackupRestoreUtils.getInstance().contactsBackup(BackRestoreActivity.this, mListener);
             }
         }).onSuccess(new Continuation<String, Object>() {
             @Override
@@ -226,7 +231,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
                 Task.callInBackground(new Callable<Boolean>() {
                     @Override
                     public Boolean call() throws Exception {
-                        return BackupRestoreUtils.getInstance().contactsRestore(BackRestoreActivity.this, list.get(0), mRestoreListener);
+                        return BackupRestoreUtils.getInstance().contactsRestore(BackRestoreActivity.this, list.get(0), mListener);
                     }
                 }).onSuccess(new Continuation<Boolean, Object>() {
                     @Override
@@ -246,57 +251,96 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
         }, Task.UI_THREAD_EXECUTOR);
     }
 
+
     @Override
     public boolean handleMessage(Message message) {
         switch (message.what) {
             case R.id.contacts_backup_progress:
-                tvBackupPath.setText("back progress == " + (int) message.obj);
+                if (mTotal == 0) {
+                    break;
+                }
+                int contactsBackupCurrent = (int) message.obj;
+                int contactsBackupProgress = contactsBackupCurrent * 100 / mTotal;
+                if (contactsBackupCurrent % mTotal == 0) {
+                    contactsBackupProgress = 100;
+                }
+                if (contactsBackupCurrent % 5 == 0) {
+                    tvBackupPath.setText("back progress == " + contactsBackupProgress);
+                }
                 break;
             case R.id.contacts_backup_total:
-                tvResult.setText("backup total count == " + (int) message.obj);
+                mTotal = (int) message.obj;
+                tvResult.setText("backup total count == " + mTotal);
                 break;
             case R.id.contacts_restore_progress:
-                tvRstorePath.setText("restore progress == " + (int) message.obj);
+                if (mTotal == 0) {
+                    break;
+                }
+                int contactsRestoreCurrent = (int) message.obj;
+                int contactsRestoreProgress = contactsRestoreCurrent * 100 / mTotal;
+                if (contactsRestoreCurrent % mTotal == 0) {
+                    contactsRestoreProgress = 100;
+                }
+                if (contactsRestoreCurrent % 5 == 0) {
+                    tvRstorePath.setText("restore progress == " + contactsRestoreProgress);
+                }
                 break;
             case R.id.contacts_restore_total:
-                tvResult.setText("restore total count == " + (int) message.obj);
+                mTotal = (int) message.obj;
+                tvResult.setText("restore total count == " + mTotal);
+                break;
+            case R.id.sms_backup_progress:
+                if (mTotal == 0) {
+                    break;
+                }
+                int smsBackupCurrent = (int) message.obj;
+                int smsBackupProgress = smsBackupCurrent * 100 / mTotal;
+                if (smsBackupCurrent % mTotal == 0) {
+                    smsBackupProgress = 100;
+                }
+                if (smsBackupCurrent % 5 == 0) {
+                    tvSmsBackupPath.setText("restore progress == " + smsBackupProgress);
+                }
+                break;
+            case R.id.sms_backup_total:
+                mTotal = (int) message.obj;
+                tvResult.setText("sms backup total count == " + mTotal);
+                break;
+            case R.id.sms_restore_progress:
+                if (mTotal == 0) {
+                    break;
+                }
+                int smsRestoreCurrent = (int) message.obj;
+                int smsRestoreProgress = smsRestoreCurrent * 100 / mTotal;
+                if (smsRestoreCurrent % mTotal == 0) {
+                    smsRestoreProgress = 100;
+                }
+                if (smsRestoreCurrent % 5 == 0) {
+                    tvSmsRstorePath.setText("restore progress == " + smsRestoreProgress);
+                }
+                break;
+            case R.id.sms_restore_total:
+                mTotal = (int) message.obj;
+                tvResult.setText("sms restore total count == " + mTotal);
                 break;
         }
         return false;
     }
 
-    BackupRestoreUtils.BackupListener mBackupListener = new BackupRestoreUtils.BackupListener() {
+    BackupReatoreListener mListener = new BackupReatoreListener() {
         @Override
-        public void onBackupProgress(int progress) {
+        public void onTotal(int typeId, int count) {
             Message msg = Message.obtain();
-            msg.what = R.id.contacts_backup_progress;
-            msg.obj = progress;
-            mHandler.sendMessage(msg);
-        }
-
-        @Override
-        public void onTotalCount(int count) {
-            Message msg = Message.obtain();
-            msg.what = R.id.contacts_backup_total;
+            msg.what = typeId;
             msg.obj = count;
             mHandler.sendMessage(msg);
         }
 
-    };
-    BackupRestoreUtils.RestoreListener mRestoreListener = new BackupRestoreUtils.RestoreListener() {
         @Override
-        public void onRestoreProgress(int progress) {
+        public void onProgress(int typeId, int progress) {
             Message msg = Message.obtain();
-            msg.what = R.id.contacts_restore_progress;
+            msg.what = typeId;
             msg.obj = progress;
-            mHandler.sendMessage(msg);
-        }
-
-        @Override
-        public void onTotalCount(int count) {
-            Message msg = Message.obtain();
-            msg.what = R.id.contacts_restore_total;
-            msg.obj = count;
             mHandler.sendMessage(msg);
         }
     };
