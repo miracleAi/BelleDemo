@@ -25,6 +25,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -98,10 +99,9 @@ public class SmsUtils {
                 file.createNewFile();
             }
             //打开文件进行写入
-            writer = new OutputStreamWriter(new FileOutputStream(filePath), "UTF-8");
+            writer = new OutputStreamWriter(new FileOutputStream(filePath), "ISO-8859-1");
             int total = list.size();
-            Log.d("zlp", "read total sms count " + total);
-            for (int i = 0; i < total; i++) {
+            /*for (int i = 0; i < total; i++) {
                 SmsInfo info = list.get(i);
                 String smsJsonStr = gson.toJson(info);
                 if (i == 0) {
@@ -112,6 +112,23 @@ public class SmsUtils {
                 } else {
                     writer.write(smsJsonStr + ",");
                 }
+                if (mBackupListener != null) {
+                    mBackupListener.onProgress(R.id.sms_backup_progress, i);
+                }
+            }*/
+            OutputStream out = new FileOutputStream(filePath);
+            for (int i = 0; i < total; i++) {
+                SmsInfo info = list.get(i);
+                String smsJsonStr = gson.toJson(info);
+                if (i == 0) {
+                    smsJsonStr = "[" + smsJsonStr + ",";
+                } else if (i == total - 1) {
+                    smsJsonStr = smsJsonStr + "]";
+                } else {
+                    smsJsonStr = smsJsonStr + ",";
+                }
+                byte[] buffer = CompressUtils.compressByGzip(smsJsonStr);
+                out.write(buffer, 0, buffer.length);
                 if (mBackupListener != null) {
                     mBackupListener.onProgress(R.id.sms_backup_progress, i);
                 }
@@ -141,9 +158,9 @@ public class SmsUtils {
         ArrayList<SmsInfo> smsList = new ArrayList<>();
         BufferedReader reader = null;
         //打开并从文件中读取数据到StringBuilder
-        try {
-            //打开文件进行读取
-            InputStream in = new FileInputStream(filePath);
+        // try {
+        //打开文件进行读取
+            /*InputStream in = new FileInputStream(filePath);
             reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
             StringBuilder jsonString = new StringBuilder();
             String line;
@@ -153,21 +170,22 @@ public class SmsUtils {
             String smsJsonStr = jsonString.toString();
             if (null == smsJsonStr || "".equals(smsJsonStr)) {
                 return null;
-            }
-            Gson gson = new Gson();
-            List<SmsInfo> list = gson.fromJson(jsonString.toString(), new TypeToken<List<SmsInfo>>() {
-            }.getType());
-            if (null == list || list.size() == 0) {
-                return null;
-            }
-            smsList.clear();
-            smsList.addAll(list);
-            mRestoreCount = smsList.size();
-            if (mRestoreLister != null) {
-                mRestoreLister.onTotal(R.id.sms_restore_total, mRestoreCount);
-            }
-            return smsList;
-        } catch (FileNotFoundException e) {
+            }*/
+        Gson gson = new Gson();
+        String unZipStr = CompressUtils.unCompressByGzip(filePath);
+        List<SmsInfo> list = gson.fromJson(unZipStr, new TypeToken<List<SmsInfo>>() {
+        }.getType());
+        if (null == list || list.size() == 0) {
+            return null;
+        }
+        smsList.clear();
+        smsList.addAll(list);
+        mRestoreCount = smsList.size();
+        if (mRestoreLister != null) {
+            mRestoreLister.onTotal(R.id.sms_restore_total, mRestoreCount);
+        }
+        return smsList;
+        /*} catch (FileNotFoundException e) {
             //当应用首次启动时，没有数据会抛出异常，异常不用捕获
             Log.d(TAG, "未找到文件！");
             return null;
@@ -183,7 +201,7 @@ public class SmsUtils {
                 e.printStackTrace();
             }
 
-        }
+        }*/
     }
 
     //写入还原短信

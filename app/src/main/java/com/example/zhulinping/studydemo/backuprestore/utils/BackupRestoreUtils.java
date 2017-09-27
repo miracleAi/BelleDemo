@@ -88,7 +88,12 @@ public class BackupRestoreUtils {
         }
     };
 
-    //联系人备份
+    /**联系人备份*
+     * VCardComposer.java buildVCard()方法中设置不备份头像
+     * @param context
+     * @param listener
+     * @return
+     */
     public String contactsBackup(Context context, BackupReatoreListener listener) {
         String filePath = FileUtils.getContactsFilePath();
         int exportType = VCardConfig.getVCardTypeFromString("default");
