@@ -6,25 +6,16 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.provider.Telephony;
-import android.util.Log;
-import android.widget.Toast;
+import android.text.TextUtils;
 
 import com.example.zhulinping.studydemo.R;
-import com.example.zhulinping.studydemo.backuprestore.BackupReatoreListener;
 import com.example.zhulinping.studydemo.backuprestore.bean.SmsInfo;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
-import org.json.JSONArray;
-
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -35,15 +26,15 @@ import java.util.List;
  * Created by zhulinping on 2017/9/25.
  */
 
-public class SmsUtils {
-    private static String TAG = "SmsUtils";
+public class SmsBackupRestoreUtils {
+    private static String LOG_TAG = "SmsBackupRestoreUtils";
     public static final Uri SMS_URI = Uri.parse("content://sms/");
     public BackupReatoreListener mBackupListener;
     public BackupReatoreListener mRestoreLister;
     public int mBackupCount = 0;
     public int mRestoreCount = 0;
 
-    public SmsUtils() {
+    public SmsBackupRestoreUtils() {
 
     }
 
@@ -101,21 +92,6 @@ public class SmsUtils {
             //打开文件进行写入
             writer = new OutputStreamWriter(new FileOutputStream(filePath), "ISO-8859-1");
             int total = list.size();
-            /*for (int i = 0; i < total; i++) {
-                SmsInfo info = list.get(i);
-                String smsJsonStr = gson.toJson(info);
-                if (i == 0) {
-                    writer.write("[");
-                }
-                if (i == total - 1) {
-                    writer.write(smsJsonStr + "]");
-                } else {
-                    writer.write(smsJsonStr + ",");
-                }
-                if (mBackupListener != null) {
-                    mBackupListener.onProgress(R.id.sms_backup_progress, i);
-                }
-            }*/
             OutputStream out = new FileOutputStream(filePath);
             for (int i = 0; i < total; i++) {
                 SmsInfo info = list.get(i);
@@ -130,7 +106,14 @@ public class SmsUtils {
                 byte[] buffer = CompressUtils.compressByGzip(smsJsonStr);
                 out.write(buffer, 0, buffer.length);
                 if (mBackupListener != null) {
-                    mBackupListener.onProgress(R.id.sms_backup_progress, i);
+                    int smsBackupProgress = i * 100 / total;
+                    if (i % total == 0) {
+                        smsBackupProgress = 100;
+                        mBackupListener.onProgress(R.id.sms_backup_progress, smsBackupProgress);
+                    }
+                    if (i % 5 == 0) {
+                        mBackupListener.onProgress(R.id.sms_backup_progress, smsBackupProgress);
+                    }
                 }
             }
             return filePath;
@@ -156,23 +139,11 @@ public class SmsUtils {
             return null;
         }
         ArrayList<SmsInfo> smsList = new ArrayList<>();
-        BufferedReader reader = null;
-        //打开并从文件中读取数据到StringBuilder
-        // try {
-        //打开文件进行读取
-            /*InputStream in = new FileInputStream(filePath);
-            reader = new BufferedReader(new InputStreamReader(in, "UTF-8"));
-            StringBuilder jsonString = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                jsonString.append(line);
-            }
-            String smsJsonStr = jsonString.toString();
-            if (null == smsJsonStr || "".equals(smsJsonStr)) {
-                return null;
-            }*/
         Gson gson = new Gson();
         String unZipStr = CompressUtils.unCompressByGzip(filePath);
+        if (TextUtils.isEmpty(unZipStr)) {
+            return null;
+        }
         List<SmsInfo> list = gson.fromJson(unZipStr, new TypeToken<List<SmsInfo>>() {
         }.getType());
         if (null == list || list.size() == 0) {
@@ -185,23 +156,6 @@ public class SmsUtils {
             mRestoreLister.onTotal(R.id.sms_restore_total, mRestoreCount);
         }
         return smsList;
-        /*} catch (FileNotFoundException e) {
-            //当应用首次启动时，没有数据会抛出异常，异常不用捕获
-            Log.d(TAG, "未找到文件！");
-            return null;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        } finally {
-            try {
-                if (reader != null) {
-                    reader.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-        }*/
     }
 
     //写入还原短信
@@ -210,9 +164,9 @@ public class SmsUtils {
             return false;
         }
         try {
+            int total = list.size();
             Uri uri = Uri.parse("content://sms");
-            //context.getContentResolver().delete(uri, null, null);
-            for (int i = 0; i < list.size(); i++) {
+            for (int i = 0; i < total; i++) {
                 SmsInfo smsInfo = list.get(i);
                 ContentValues values = new ContentValues();
                 //values.put(BaseColumns._ID, smsInfo.getId());
@@ -233,12 +187,18 @@ public class SmsUtils {
                 values.put(Telephony.Sms.BODY, smsInfo.getBody());
                 context.getContentResolver().insert(uri, values);
                 if (mRestoreLister != null) {
-                    mRestoreLister.onProgress(R.id.sms_restore_progress, i);
+                    int smsRestoreProgress = i * 100 / total;
+                    if (i % total == 0) {
+                        smsRestoreProgress = 100;
+                        mRestoreLister.onProgress(R.id.sms_restore_progress, smsRestoreProgress);
+                    }
+                    if (i % 5 == 0) {
+                        mRestoreLister.onProgress(R.id.sms_restore_progress, smsRestoreProgress);
+                    }
                 }
             }
             return true;
         } catch (Exception e) {
-            Log.d("zlp", "sms error " + e.getMessage());
             e.printStackTrace();
             return false;
         }

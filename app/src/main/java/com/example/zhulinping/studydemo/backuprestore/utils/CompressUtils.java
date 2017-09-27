@@ -1,7 +1,6 @@
 package com.example.zhulinping.studydemo.backuprestore.utils;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -16,8 +15,6 @@ import java.util.zip.GZIPOutputStream;
  */
 
 public class CompressUtils {
-    private static int BUFFERSIZE = 1024;
-
     public static byte[] compressByGzip(String str) {
         if (null == str || str.length() <= 0) {
             return null;
@@ -54,7 +51,7 @@ public class CompressUtils {
             e.printStackTrace();
         } catch (Exception e) {
             e.printStackTrace();
-            return "500";//错误
+            return null;//错误
         }
         return null;
     }

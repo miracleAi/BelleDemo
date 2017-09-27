@@ -13,14 +13,11 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.example.zhulinping.studydemo.R;
-import com.example.zhulinping.studydemo.backuprestore.bean.SmsInfo;
-import com.example.zhulinping.studydemo.backuprestore.utils.BackupRestoreUtils;
+import com.example.zhulinping.studydemo.backuprestore.utils.BackupReatoreListener;
+import com.example.zhulinping.studydemo.backuprestore.utils.ContactsBackupRestoreUtils;
 import com.example.zhulinping.studydemo.backuprestore.utils.FileUtils;
-import com.example.zhulinping.studydemo.backuprestore.utils.SmsUtils;
-import com.example.zhulinping.studydemo.backuprestore.vcard.RestoreRequest;
+import com.example.zhulinping.studydemo.backuprestore.utils.SmsBackupRestoreUtils;
 
-import java.util.ArrayList;
-import java.util.TimerTask;
 import java.util.concurrent.Callable;
 
 import bolts.Continuation;
@@ -54,8 +51,8 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
     @BindView(R.id.tv_sms_rstore_path)
     TextView tvSmsRstorePath;
     private int mTotal = -1;
-    private SmsUtils mSmsUtils;
-    private BackupRestoreUtils mContactsUtils;
+    private SmsBackupRestoreUtils mSmsBackupRestoreUtils;
+    private ContactsBackupRestoreUtils mContactsUtils;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,8 +64,8 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
         btnSmsBackup.setOnClickListener(this);
         btnSmsRestore.setOnClickListener(this);
         mHandler = new Handler(this);
-        mSmsUtils = new SmsUtils();
-        mContactsUtils = new BackupRestoreUtils();
+        mSmsBackupRestoreUtils = new SmsBackupRestoreUtils();
+        mContactsUtils = new ContactsBackupRestoreUtils();
     }
 
     @Override
@@ -117,7 +114,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
         Task.callInBackground(new Callable<String>() {
             @Override
             public String call() throws Exception {
-                return mSmsUtils.smsBackup(mSmsUtils.getSmsList(BackRestoreActivity.this, mListener));
+                return mSmsBackupRestoreUtils.smsBackup(mSmsBackupRestoreUtils.getSmsList(BackRestoreActivity.this, mListener));
             }
         }).onSuccess(new Continuation<String, Object>() {
             @Override
@@ -144,7 +141,7 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
         Task.callInBackground(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
-                return mSmsUtils.smsRestore(BackRestoreActivity.this, mSmsUtils.readSmsFromFile(FileUtils.getSmsFilePath(), mListener));
+                return mSmsBackupRestoreUtils.smsRestore(BackRestoreActivity.this, mSmsBackupRestoreUtils.readSmsFromFile(FileUtils.getSmsFilePath(), mListener));
             }
         }).onSuccess(new Continuation<Boolean, Object>() {
             @Override
@@ -258,36 +255,16 @@ public class BackRestoreActivity extends AppCompatActivity implements View.OnCli
                 tvResult.setText("restore total count == " + mTotal);
                 break;
             case R.id.sms_backup_progress:
-                if (mTotal == 0) {
-                    break;
-                }
-                int smsBackupCurrent = (int) message.obj;
-                int smsBackupProgress = smsBackupCurrent * 100 / mTotal;
-                if (smsBackupCurrent % mTotal == 0) {
-                    smsBackupProgress = 100;
-                    tvSmsBackupPath.setText("restore progress == " + smsBackupProgress);
-                }
-                if (smsBackupCurrent % 5 == 0) {
-                    tvSmsBackupPath.setText("restore progress == " + smsBackupProgress);
-                }
+                int smsBackupProgress = (int) message.obj;
+                tvSmsBackupPath.setText("restore progress == " + smsBackupProgress);
                 break;
             case R.id.sms_backup_total:
                 mTotal = (int) message.obj;
                 tvResult.setText("sms backup total count == " + mTotal);
                 break;
             case R.id.sms_restore_progress:
-                if (mTotal == 0) {
-                    break;
-                }
-                int smsRestoreCurrent = (int) message.obj;
-                int smsRestoreProgress = smsRestoreCurrent * 100 / mTotal;
-                if (smsRestoreCurrent % mTotal == 0) {
-                    smsRestoreProgress = 100;
-                    tvSmsRstorePath.setText("restore progress == " + smsRestoreProgress);
-                }
-                if (smsRestoreCurrent % 5 == 0) {
-                    tvSmsRstorePath.setText("restore progress == " + smsRestoreProgress);
-                }
+                int smsRestoreProgress = (int) message.obj;
+                tvSmsRstorePath.setText("restore progress == " + smsRestoreProgress);
                 break;
             case R.id.sms_restore_total:
                 mTotal = (int) message.obj;

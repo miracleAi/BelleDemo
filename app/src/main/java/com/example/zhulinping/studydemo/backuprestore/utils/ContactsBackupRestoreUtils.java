@@ -11,7 +11,6 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.example.zhulinping.studydemo.R;
-import com.example.zhulinping.studydemo.backuprestore.BackupReatoreListener;
 import com.example.zhulinping.studydemo.backuprestore.vcard.RestoreRequest;
 import com.example.zhulinping.studydemo.backuprestore.vcard.VCardComposer;
 import com.example.zhulinping.studydemo.backuprestore.vcard.VCardConfig;
@@ -49,7 +48,8 @@ import java.util.ArrayList;
  * Created by zhulinping on 2017/9/25.
  */
 
-public class BackupRestoreUtils {
+public class ContactsBackupRestoreUtils {
+    public static final boolean DEBUG = true;
     private static final String LOG_TAG = "BackupRestoreUtils";
     public final static int VCARD_VERSION_AUTO_DETECT = 0;
     public final static int VCARD_VERSION_V21 = 1;
@@ -59,7 +59,7 @@ public class BackupRestoreUtils {
     private int mRestoreCount = 0;
     private BackupReatoreListener mRestoreListener = null;
 
-    public BackupRestoreUtils() {
+    public ContactsBackupRestoreUtils() {
     }
 
     private VCardEntryHandler mHandler = new VCardEntryHandler() {
@@ -75,6 +75,7 @@ public class BackupRestoreUtils {
                 int progress = mRestoreCurrentCount * 100 / mRestoreCount;
                 if (mRestoreCurrentCount % mRestoreCount == 0) {
                     progress = 100;
+                    mRestoreListener.onProgress(R.id.contacts_restore_progress, progress);
                 }
                 if (mRestoreCurrentCount % 5 == 0) {
                     mRestoreListener.onProgress(R.id.contacts_restore_progress, progress);
@@ -88,8 +89,10 @@ public class BackupRestoreUtils {
         }
     };
 
-    /**联系人备份*
+    /**
+     * 联系人备份*
      * VCardComposer.java buildVCard()方法中设置不备份头像
+     *
      * @param context
      * @param listener
      * @return
@@ -108,27 +111,39 @@ public class BackupRestoreUtils {
                     null, null,
                     null, contentUriForRawContactsEntity)) {
                 String errorReason = composer.getErrorReason();
-                Log.d("zlp", "vcard compose fail reason :" + errorReason);
                 return null;
             }
             int total = composer.getCount();
             if (total == 0) {
                 return null;
             }
-            listener.onTotal(R.id.contacts_backup_total, total);
+            if (listener != null) {
+                listener.onTotal(R.id.contacts_backup_total, total);
+            }
             int current = 1;  // 1-origin
             while (!composer.isAfterLast()) {
                 writer.write(composer.createOneEntry());
                 // vCard export is quite fast (compared to import), and frequent notifications
                 // bother notification bar too much.
-                listener.onProgress(R.id.contacts_backup_progress, current);
+                if (listener != null) {
+                    int contactsBackupProgress = current * 100 / total;
+                    if (current % total == 0) {
+                        contactsBackupProgress = 100;
+                        listener.onProgress(R.id.contacts_backup_progress, contactsBackupProgress);
+                    }
+                    if (current % 5 == 0) {
+                        listener.onProgress(R.id.contacts_backup_progress, contactsBackupProgress);
+                    }
+                }
                 current++;
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             return null;
         } catch (IOException e) {
-            Log.d("zlp", "error" + e.getMessage());
+            if (DEBUG) {
+                Log.d(LOG_TAG, "error" + e.getMessage());
+            }
             e.printStackTrace();
             return null;
         } finally {
@@ -139,7 +154,9 @@ public class BackupRestoreUtils {
                 try {
                     writer.close();
                 } catch (IOException e) {
-                    Log.e("zlp", "IOException is thrown during close(). Ignored. " + e);
+                    if (DEBUG) {
+                        Log.e(LOG_TAG, "IOException is thrown during close(). Ignored. " + e);
+                    }
                 }
             }
         }
@@ -191,10 +208,14 @@ public class BackupRestoreUtils {
         boolean successful = false;
         try {
             if (uri != null) {
-                Log.i(LOG_TAG, "start importing one vCard (Uri: " + uri + ")");
+                if (DEBUG) {
+                    Log.i(LOG_TAG, "start importing one vCard (Uri: " + uri + ")");
+                }
                 is = mResolver.openInputStream(uri);
             } else if (request.data != null) {
-                Log.i(LOG_TAG, "start importing one vCard (byte[])");
+                if (DEBUG) {
+                    Log.i(LOG_TAG, "start importing one vCard (byte[])");
+                }
                 is = new ByteArrayInputStream(request.data);
             }
 
@@ -244,7 +265,7 @@ public class BackupRestoreUtils {
                 successful = true;
                 break;
             } catch (IOException e) {
-                Log.e(LOG_TAG, "IOException was emitted: " + e.getMessage());
+                e.printStackTrace();
             } catch (VCardNestedException e) {
                 // This exception should not be thrown here. We should instead handle it
                 // in the preprocessing session in ImportVCardActivity, as we don't try
@@ -253,22 +274,25 @@ public class BackupRestoreUtils {
                 // TODO: Handle this case appropriately, which should mean we have to have
                 // code trying to auto-detect the type of given vCard twice (both in
                 // ImportVCardActivity and ImportVCardService).
-                Log.e(LOG_TAG, "Nested Exception is found.");
+                if (DEBUG) {
+                    Log.e(LOG_TAG, "Nested Exception is found.");
+                }
             } catch (VCardNotSupportedException e) {
-                Log.e(LOG_TAG, e.toString());
+                e.printStackTrace();
             } catch (VCardVersionException e) {
-                if (i == length - 1) {
+                if (i == length - 1 && DEBUG) {
                     Log.e(LOG_TAG, "Appropriate version for this vCard is not found.");
                 } else {
                     // We'll try the other (v30) version.
                 }
             } catch (VCardException e) {
-                Log.e(LOG_TAG, e.toString());
+                e.printStackTrace();
             } finally {
                 if (is != null) {
                     try {
                         is.close();
                     } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
             }
@@ -304,7 +328,9 @@ public class BackupRestoreUtils {
                 try {
                     requests.add(constructImportRequest(context, mSource, null, mDisplayName));
                 } catch (VCardException e) {
-                    Log.e(LOG_TAG, "Maybe the file is in wrong format", e);
+                    if (DEBUG) {
+                        Log.e(LOG_TAG, "Maybe the file is in wrong format", e);
+                    }
                     return null;
                 }
             } else {
@@ -330,11 +356,15 @@ public class BackupRestoreUtils {
                     try {
                         localDataUri = copyTo(context, sourceUri, filename);
                     } catch (SecurityException e) {
-                        Log.e(LOG_TAG, "SecurityException", e);
+                        if (DEBUG) {
+                            Log.e(LOG_TAG, "SecurityException", e);
+                        }
                         return null;
                     }
                     if (localDataUri == null) {
-                        Log.w(LOG_TAG, "destUri is null");
+                        if (DEBUG) {
+                            Log.w(LOG_TAG, "destUri is null");
+                        }
                         break;
                     }
 
@@ -369,10 +399,14 @@ public class BackupRestoreUtils {
                     try {
                         request = constructImportRequest(context, null, localDataUri, displayName);
                     } catch (VCardException e) {
-                        Log.e(LOG_TAG, "Maybe the file is in wrong format", e);
+                        if (DEBUG) {
+                            Log.e(LOG_TAG, "Maybe the file is in wrong format", e);
+                        }
                         return null;
                     } catch (IOException e) {
-                        Log.e(LOG_TAG, "Unexpected IOException", e);
+                        if (DEBUG) {
+                            Log.e(LOG_TAG, "Unexpected IOException", e);
+                        }
                         return null;
                     }
                     requests.add(request);
@@ -381,18 +415,26 @@ public class BackupRestoreUtils {
             if (!requests.isEmpty()) {
                 return requests;
             } else {
-                Log.w(LOG_TAG, "Empty import requests. Ignore it.");
+                if (DEBUG) {
+                    Log.w(LOG_TAG, "Empty import requests. Ignore it.");
+                }
                 return null;
             }
         } catch (OutOfMemoryError e) {
-            Log.e(LOG_TAG, "OutOfMemoryError occured during caching vCard");
+            if (DEBUG) {
+                Log.e(LOG_TAG, "OutOfMemoryError occured during caching vCard");
+            }
             System.gc();
             return null;
         } catch (IOException e) {
-            Log.e(LOG_TAG, "IOException during caching vCard", e);
+            if (DEBUG) {
+                Log.e(LOG_TAG, "IOException during caching vCard", e);
+            }
             return null;
         } finally {
-            Log.i(LOG_TAG, "Finished caching vCard.");
+            if (DEBUG) {
+                Log.i(LOG_TAG, "Finished caching vCard.");
+            }
             mWakeLock.release();
         }
     }
@@ -426,14 +468,18 @@ public class BackupRestoreUtils {
                 try {
                     inputChannel.close();
                 } catch (IOException e) {
-                    Log.w(LOG_TAG, "Failed to close inputChannel.");
+                    if (DEBUG) {
+                        Log.w(LOG_TAG, "Failed to close inputChannel.");
+                    }
                 }
             }
             if (outputChannel != null) {
                 try {
                     outputChannel.close();
                 } catch (IOException e) {
-                    Log.w(LOG_TAG, "Failed to close outputChannel");
+                    if (DEBUG) {
+                        Log.w(LOG_TAG, "Failed to close outputChannel");
+                    }
                 }
             }
         }
@@ -478,6 +524,7 @@ public class BackupRestoreUtils {
                 try {
                     is.close();
                 } catch (IOException e) {
+                    e.printStackTrace();
                 }
 
                 shouldUseV30 = true;
@@ -501,13 +548,16 @@ public class BackupRestoreUtils {
                     try {
                         is.close();
                     } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
             }
 
             vcardVersion = shouldUseV30 ? VCARD_VERSION_V30 : VCARD_VERSION_V21;
         } catch (VCardNestedException e) {
-            Log.w(LOG_TAG, "Nested Exception is found (it may be false-positive).");
+            if (DEBUG) {
+                Log.w(LOG_TAG, "Nested Exception is found (it may be false-positive).");
+            }
             // Go through without throwing the Exception, as we may be able to detect the
             // version before it
         }
