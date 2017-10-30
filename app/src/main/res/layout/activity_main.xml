@@ -30,4 +30,10 @@
         android:layout_height="wrap_content"
         android:padding="10dp"
         android:text="backup and restore"/>
+    <Button
+        android:id="@+id/forum_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:text="user forum"/>
 </LinearLayout>

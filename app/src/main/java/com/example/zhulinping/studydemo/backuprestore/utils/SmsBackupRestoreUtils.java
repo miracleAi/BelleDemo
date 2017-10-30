@@ -166,11 +166,12 @@ public class SmsBackupRestoreUtils {
         try {
             int total = list.size();
             Uri uri = Uri.parse("content://sms");
+           // context.getContentResolver().delete(uri, null, null);
             for (int i = 0; i < total; i++) {
                 SmsInfo smsInfo = list.get(i);
                 ContentValues values = new ContentValues();
-                //values.put(BaseColumns._ID, smsInfo.getId());
-                // values.put(Telephony.Sms.THREAD_ID, smsInfo.getThreadId());
+               // values.put(BaseColumns._ID, smsInfo.getId());
+                values.put(Telephony.Sms.THREAD_ID, smsInfo.getThreadId());
                 values.put(Telephony.Sms.ADDRESS, smsInfo.getAddress());
                 values.put(Telephony.Sms.PERSON, smsInfo.getPerson());
                 values.put(Telephony.Sms.PROTOCOL, smsInfo.getProtocol());

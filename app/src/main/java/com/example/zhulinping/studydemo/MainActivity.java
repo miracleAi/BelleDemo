@@ -9,6 +9,7 @@ import android.widget.TextView;
 import com.example.zhulinping.studydemo.backuprestore.BackRestoreActivity;
 import com.example.zhulinping.studydemo.coord.CoordActivity;
 import com.example.zhulinping.studydemo.floatingManager.FloatingActivity;
+import com.example.zhulinping.studydemo.forum.ForumActivity;
 import com.example.zhulinping.studydemo.statusbar.StatusBarActivity;
 
 import butterknife.BindView;
@@ -24,6 +25,8 @@ public class MainActivity extends AppCompatActivity {
     Button mFloatingBtn;
     @BindView(R.id.backup_restore_btn)
     Button mBackupRestoreBtn;
+    @BindView(R.id.forum_btn)
+    Button mForumBtn;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,5 +48,9 @@ public class MainActivity extends AppCompatActivity {
     @OnClick(R.id.backup_restore_btn)
     public void backupRestoreClick(){
         startActivity(new Intent(MainActivity.this, BackRestoreActivity.class));
+    }
+    @OnClick(R.id.forum_btn)
+    public void forumClick(){
+        startActivity(new Intent(MainActivity.this, ForumActivity.class));
     }
 }
